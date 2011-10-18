@@ -1,0 +1,6 @@
+Descriptions
+-------------
+Board used to transmit 915MHz RF signal. MSP430 controls the amplifier output by modulation.
+
+TxBoardDefinitions.h --> Header file for board
+TestBoard.c --> Initial testing of platform.
