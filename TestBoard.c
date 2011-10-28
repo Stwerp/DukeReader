@@ -9,14 +9,14 @@
 
 #include  <msp430x20x1.h>
 /* #include <stdlib.h> */
-#include <TxBoardDefinitions.h>
+#include "TxBoardDefinitions.h"
 
 /*unsigned char mask2;      // 1 byte = 8 bits
 unsigned short position;  // 2 bytes = 16 bits
 unsigned long data;       // 4 bytes = 32 bits
 */
 
-void ShortBeep()
+inline void ShortBeep()
 {
   //Delay Cycles should scale with Clock speed
   //Emit a tone over the beeper
@@ -26,12 +26,14 @@ void ShortBeep()
     P1OUT ^= BeeperPIN;
     //Delay time
     //__delay_cycles(1000); //<- This is for 16MHz clock
-    __delay_cycles(63); //<- This is for 1MHz clock
+    __delay_cycles(126); //<- This is for 1MHz clock
+    //Turn OFF BeeperPIN
   }
-  P1OUT = 0;
+  //Make Sure Beeper pin is LOW
+  P1OUT &= ~(BeeperPIN);
 }
 
-void AClkSleep()
+inline void AClkSleep()
 {
   // Sleep
   // Initialize timerA0
@@ -41,7 +43,7 @@ void AClkSleep()
   TACTL = TACLR + TASSEL_1 + MC_1;         // Source: ACLK, Mode: UP
   // Enter LPM3 Mode
   _BIC_SR(OSCOFF); //Turn On Crystal
-  _BIS_SR(LPM3_bits + GIE);                 // Enter LPM3 w/ interrupts
+  _BIS_SR(CPUOFF + SCG0 + SCG1 + GIE);                 // Enter LPM3 w/ interrupts
   // -- Wake up -- //
   
   //Turn Off Oscillator
@@ -56,13 +58,13 @@ void main(void)
   // Set RSEL bits
   BCSCTL1 &= 0xF0;    // 0b1111_0000 -> Clear out previous setting
   //BCSCTL1 |= (XTS);    // Place new setting for RSEL : 0b0000_xxxx
-  DCOCTL = CALDCO_1MHZ_;     // Place new setting for DCO  : 0bxxx0_0000*/
-  BCSCTL1 = CALBC1_1MHZ_; //Setup pre-calibrated 1 MHz clock
+  DCOCTL = CALDCO_1MHZ;     // Place new setting for DCO  : 0bxxx0_0000*/
+  BCSCTL1 = CALBC1_1MHZ; //Setup pre-calibrated 1 MHz clock
 
   WDTCTL = WDTPW + WDTHOLD;                 // Stop watchdog timer
   
   // Turn OFF SMCLK and external Oscillator
-  _BIS_SR(OSCOFF + SCG1 + SCG0); // (leave CPU clock on)
+  _BIS_SR(OSCOFF + SCG1); // (leave CPU clock on)
   
   // Set P1.ALL to be correct Output/Input ports
   P1OUT = 0x00; //(clear output buffer)
@@ -77,9 +79,39 @@ void main(void)
    // // // // // // // // // // // // //
    
    //Short Beep
-   //ShortBeep();
+   ShortBeep();
+   //Call Mod Test
+   //while(1){P1OUT ^= ModPIN; __delay_cycles(10);}
+   //Sleep;
+   AClkSleep();
+   //Test LEDs
+   P1OUT ^= LED1;
+   AClkSleep();
+   P1OUT ^= LED2;
+   AClkSleep();
+   P1OUT ^= LED3;
    
-      
+   AClkSleep();
+   P1OUT ^= LED1;
+   AClkSleep();
+   P1OUT ^= LED2;
+   AClkSleep();
+   P1OUT ^= LED3;
+   
+   ShortBeep();
+   AClkSleep();
+   
+   P1OUT |= ModPIN;
+   for( int k = 2 ; k!=0 ; k--)
+   {
+     AClkSleep();
+   }
+   P1OUT &= ~(ModPIN);
+   for( int k = 2 ; k!=0 ; k--)
+   {
+     AClkSleep();
+   }
+   
    
  }  
 }
@@ -93,7 +125,7 @@ __interrupt void Timer_A0 (void)
   // Turn OFF Timer
   TACTL = 0x00;
   // Turn CPU on
-  _BIC_SR_IRQ(CPUOFF + GIE);
+  _BIC_SR_IRQ(CPUOFF + SCG0 + GIE);
 }
 
 
