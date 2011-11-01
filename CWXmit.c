@@ -5,6 +5,8 @@
 //
 // Transmit CW output
 //
+// This does NOT program the PLL!
+// 
 //******************************************************************************
 
 #include  <msp430x20x1.h>

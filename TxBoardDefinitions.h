@@ -13,28 +13,14 @@
 
 /* MSP430 Pin Definitions */
 
-#ifdef HARDWARE_V1
-#define ModPIN    (0x01)
-#define LadjPIN   (0x02)
-#define PdnPIN    (0x04)
-#define BeeperPIN (0x08)
-#define NCPIN     (0x10)
-#define LED1      (0x20)
-#define LED2      (0x40)
-#define LED3      (0x80)
-
-#define LED1PIN   (0x20)
-#define LED2PIN   (0x40)
-#define LED3PIN   (0x80)
-#endif // #if HARDWARE_V1
-
+/* Board with the PLL */
 #ifdef HARDWARE_V2
-#define ModPIN    (0x01)
-#define DataPIN   (0x02)
-#define ClkPIN    (0x04)
-#define LePIN     (0x08)
-#define BeeperPIN (0x10)
-#define LED1      (0x20)
+#define ModPIN    (0x01) /* ASK Modulation pin */
+#define DataPIN   (0x02) /* PLL Data pin */
+#define ClkPIN    (0x04) /* PLL Clk pin */
+#define LePIN     (0x08) /* PLL Lock Enable pin */
+#define BeeperPIN (0x10) /* Piezo beeper */
+#define LED1      (0x20) /* LED's (1 for ON, 0 for OFF) */
 #define LED2      (0x40)
 #define LED3      (0x80)
 
@@ -53,5 +39,20 @@
 #endif // #if HARDWARE_V2
 
 
+/* Old board version */
+#ifdef HARDWARE_V1
+#define ModPIN    (0x01)
+#define LadjPIN   (0x02)
+#define PdnPIN    (0x04)
+#define BeeperPIN (0x08)
+#define NCPIN     (0x10)
+#define LED1      (0x20)
+#define LED2      (0x40)
+#define LED3      (0x80)
+
+#define LED1PIN   (0x20)
+#define LED2PIN   (0x40)
+#define LED3PIN   (0x80)
+#endif // #if HARDWARE_V1
 
 #endif // #ifndef PIN_DEF

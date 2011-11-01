@@ -9,6 +9,8 @@
 
 //Main Program
 // Define Hardware Version:
+// V1 is for the initial test run that includes the LINX module and does not require PLL programming
+// V2 uses the minicircuits PLL synthesizer that requires special programming
 //#define HARDWARE_V1
 #define HARDWARE_V2
 

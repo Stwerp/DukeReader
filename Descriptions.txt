@@ -2,5 +2,19 @@ Descriptions
 -------------
 Board used to transmit 915MHz RF signal. MSP430 controls the amplifier output by modulation.
 
-TxBoardDefinitions.h --> Header file for board
-TestBoard.c --> Initial testing of platform.
+TxBoardDefinitions.h --> Header file for the board
+Main.c --> Selects which programs are included what code to run
+
+HARDWARE_V2 Files:
+ProgramPLL.c --> Programs the PLL and transmits a CW signal on the output.
+
+
+HARDWARE_V1 Files: (Outdated)
+CWXmit.c --> Transmits a CW wave, but does not program the PLL
+MessageXmit.c --> Transmits a message to a tag. This program is designed for Hardware_V1
+TestBoard.c --> Pulses LEDs and sends out a signal and beeps a lot. Just used to make sure
+    everything was soldered correctly and working.
+
+Neither:
+TryDemodFile.c --> This is actually the sister program to MessageXmit.c which is intended to be
+    programmed on a tag (with an MSP430) to demodulate the message. It is not used for this board.

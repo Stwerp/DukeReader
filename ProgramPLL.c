@@ -11,6 +11,7 @@
 /* #include <stdlib.h> */
 #include "TxBoardDefinitions.h"
 
+/* Not used, just here to remind me how long shorts and longs are */
 /*unsigned char mask2;      // 1 byte = 8 bits
 unsigned short position;  // 2 bytes = 16 bits
 unsigned long data;       // 4 bytes = 32 bits
@@ -20,26 +21,28 @@ unsigned int count;
 
 inline void ShortBeep()
 {
-  //Delay Cycles should scale with Clock speed
-  //Emit a tone over the beeper
+  //The Delay Cycles should scale with Clock speed, but I don't have the equations for them.
+  //Emit a tone over the beeper -- This is just intended for user feedback.
   for (unsigned int i = 500; i!=0; i--)
   {
     //Toggle Pin
     P1OUT ^= BeeperPIN;
     //Delay time
-    //__delay_cycles(1000); //<- This is for 16MHz clock
-    __delay_cycles(126); //<- This is for 1MHz clock
+    //__delay_cycles(1000); //<- This is for the 16MHz clock
+    __delay_cycles(126); //<- This is for the 1MHz clock
     //Turn OFF BeeperPIN
   }
-  //Make Sure Beeper pin is LOW
+  //Make Sure Beeper pin is LOW when we exit
   P1OUT &= ~(BeeperPIN);
 }
 
+/* Delay program execution using clock cycles */
 inline void SleepABit()
 {
   for(unsigned int count = 10000; count > 0; count--)
     __delay_cycles(40);
 }
+/* Delay program execution using sleeping and onboard clock */
 inline void AClkSleep()
 {
   // Sleep
@@ -74,12 +77,12 @@ void ClockOutData( unsigned long DataRegister )
   P1OUT &= ~(ClkPIN);
   for(unsigned char i = 21; i > 0; i--){
     //Test 21st Bit and Set Data pin accordingly
-    if((PLLRegister & ((unsigned long)(1048576))) == 0)
-      //2^20 = 1048676 (21st bit)
+    if((PLLRegister & ((unsigned long)(1048576))) == 0) 
+      //2^20 = 1048576 (21st bit) == 0x100000
       P1OUT &= ~(DataPIN); //Set Pin Low
     else
       P1OUT |= (DataPIN); //Set High
-    //Clock in Data
+    //Clock in Data (raise high, then bring low)
     __delay_cycles(2);
     P1OUT |= ClkPIN;
     __delay_cycles(2);
@@ -87,7 +90,7 @@ void ClockOutData( unsigned long DataRegister )
     //Shift Data
     PLLRegister = PLLRegister << 1;
   }
-  //Sent 21 bits, Latch in Data
+  //After sending 21 bits, Latch in Data
   __delay_cycles(2);
   P1OUT |= LePIN;
   __delay_cycles(2);
@@ -101,10 +104,14 @@ unsigned long FormNReg( unsigned char A, unsigned short B )
   //FORMAT (21 bits total):
   //  [1b][13b][5b][2b]
   //  [(1)CP Gain][B counter][A counter][(01)Control Bits]
-  // CP: 1 << 21 (or) 2^20 = 2,097,152
-  // Control : 1 (or) 2^0 = 1
-  // A : (A) << 2 (A shifted over two times)
-  // B : (B) << 7 (B shifted over 7 times)
+  //  CP      : 1 << 21 (or) 2^20 = 2,097,152
+  //  B       : (B) << 7 (B shifted over 7 times)
+  //  A       : (A) << 2 (A shifted over two times)
+  //  Control : 1 (or) 2^0 = 1
+  //(Details on the Analog Devices spec sheet are somewhat fuzzy as to exactly what
+  //  these values mean. These values were ripped from a test program available from
+  //  minicircuits for the synthesizer we are using [which has an internal Analog Devices PLL]
+  //  set for 915 MHz output.)
   return (unsigned long)(
     (unsigned long)(2097152)  |   //CP
     (unsigned long)(1)        |   //Control
@@ -115,6 +122,10 @@ unsigned long FormNReg( unsigned char A, unsigned short B )
 
 void InitPLL()
 {
+  //Initializes the PLL for 915 MHz output. The numbers were found from a program available at
+  //  minicircuits website for the synthesizer we are using. (Slightly) More details are available 
+  //  from the analog devices pll (internal to the minicircuits frequency synthesizer) datasheet.
+  
   //Initalizes PLL for 915MHz output
   ClockOutData( (unsigned long)(FREGISTER_1) );
   ClockOutData( (unsigned long)(RREGISTER) );
@@ -139,11 +150,11 @@ void main(void)
   // Turn OFF SMCLK and external Oscillator
   _BIS_SR(OSCOFF + SCG1); // (leave CPU clock on)
   
-  // Set P1.ALL to be correct Output/Input ports
+  // Set P1.(ALL) to be correct Output/Input ports
   P1OUT = 0x00; //(clear output buffer)
-  //      1111_1110 --1 for out, 0 for in
+  //      1111_1111 --1 for out, 0 for in
   P1DIR = (0xFF);
-  P1SEL = 0x00; //set bit for special function on pin
+  P1SEL = 0x00; //set bit for special function on pin (1 for special fn, 0 for normal operation)
 
   //Alert user that we are powered
   ShortBeep();
@@ -156,18 +167,22 @@ void main(void)
   //Initialize
   InitPLL();
   
-  //Sleep some more
+  //Sleep some more -- This is required so that the the PLL can lock onto its frequency and we
+  //  don't turn on the power amp too soon. That would make the amp attempt to draw too much
+  //  current and blow the fuse. If this were working "properly", we would wait until the PLL
+  //  responds that it has locked onto the frequency of interest before continuing. Until then,
+  //  though, just waiting works perfectly fine.
   SleepABit();
   SleepABit();
   SleepABit();
   
-  //New Alert
+  //New Alert -- Now, we're getting ready to send out power!
   ShortBeep();
   
   //Turn on RED led and start emitting wave
   P1OUT |= LED1 + ModPIN;
   
-  //Go to Full Off Mode.
+  //Go to Full Off Mode. This leaves the amp on and sending out a CW wave.
   LPM4;
 }
 
